@@ -52,7 +52,7 @@ if pasted_data:
             
             clustering_model = AgglomerativeClustering(
                 n_clusters=None,
-                affinity='precomputed',
+                metric='precomputed',
                 linkage='average',
                 distance_threshold=threshold
             )
