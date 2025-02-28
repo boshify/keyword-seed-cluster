@@ -15,7 +15,7 @@ This app clusters similar keywords based on their semantic similarity.
 - **Embedding:** The app computes vector embeddings for each keyword using a pre-trained language model (SentenceTransformer).
 - **Clustering:** Using Agglomerative Clustering with cosine distance, it groups semantically similar keywords.
 - **Seed Selection:** Within each cluster, the keyword with the highest search volume is chosen as the seed.
-- **Output:** The app displays a summary table showing the seed keywords along with the number of related (child) keywords.
+- **Output:** The app displays a summary table showing the seed keywords along with the number of related (child) keywords, their volumes, and the sum of child volumes.
 
 **Why It's Valuable:**
 - **Keyword Grouping:** Reduce redundancy by identifying core keywords.
@@ -24,7 +24,7 @@ This app clusters similar keywords based on their semantic similarity.
 """)
 
 # Main Title and Instructions
-st.title("Keyword Seed Clustering App")
+st.title("Keyword Clustering App (Paste Mode)")
 st.write("""
 **Instructions:**  
 Paste your keyword list below in a two–column, tab-delimited format.  
@@ -58,6 +58,8 @@ if pasted_data:
         if st.button("Run Clustering"):
             data = data.dropna(subset=[keyword_col, volume_col])
             data[keyword_col] = data[keyword_col].astype(str).str.strip()
+            # Convert volume to numeric
+            data[volume_col] = pd.to_numeric(data[volume_col], errors='coerce')
             
             st.write("Computing embeddings for keywords...")
             model = SentenceTransformer('all-MiniLM-L6-v2')
@@ -81,10 +83,15 @@ if pasted_data:
             for cluster in np.unique(cluster_labels):
                 cluster_data = data[data["cluster"] == cluster]
                 seed_row = cluster_data.loc[cluster_data[volume_col].idxmax()]
+                seed_volume = seed_row[volume_col]
+                total_cluster_volume = cluster_data[volume_col].sum()
+                child_volume = total_cluster_volume - seed_volume
                 children_count = len(cluster_data) - 1
                 cluster_summary.append({
                     "Seed Keyword": seed_row[keyword_col],
-                    "Children Count": children_count
+                    "Seed Volume": seed_volume,
+                    "Children Count": children_count,
+                    "Child Volume": child_volume
                 })
             
             seed_df = pd.DataFrame(cluster_summary).sort_values(by="Children Count", ascending=False)
