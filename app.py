@@ -24,7 +24,7 @@ This app clusters similar keywords based on their semantic similarity.
 """)
 
 # Main Title and Instructions
-st.title("Keyword Clustering App (Paste Mode)")
+st.title("Keyword Seed Clustering App")
 st.write("""
 **Instructions:**  
 Paste your keyword list below in a two–column, tab-delimited format.  
@@ -48,26 +48,26 @@ if pasted_data:
     else:
         st.write("### Data Preview")
         st.dataframe(data.head())
-
+        
         cols = list(data.columns)
         keyword_col = st.selectbox("Select the Keyword column:", cols, index=cols.index("Keyword") if "Keyword" in cols else 0)
         volume_col = st.selectbox("Select the Search Volume column:", cols, index=cols.index("Volume") if "Volume" in cols else 1)
-
+        
         threshold = st.slider("Clustering distance threshold (lower => more clusters)", 0.1, 1.0, 0.3, 0.05)
-
+        
         if st.button("Run Clustering"):
             data = data.dropna(subset=[keyword_col, volume_col])
             data[keyword_col] = data[keyword_col].astype(str).str.strip()
-
+            
             st.write("Computing embeddings for keywords...")
             model = SentenceTransformer('all-MiniLM-L6-v2')
             keywords = data[keyword_col].tolist()
             embeddings = model.encode(keywords, show_progress_bar=True)
-
+            
             st.write("Clustering keywords...")
             cosine_sim = cosine_similarity(embeddings)
             cosine_dist = 1 - cosine_sim
-
+            
             clustering_model = AgglomerativeClustering(
                 n_clusters=None,
                 metric='precomputed',
@@ -76,7 +76,7 @@ if pasted_data:
             )
             cluster_labels = clustering_model.fit_predict(cosine_dist)
             data["cluster"] = cluster_labels
-
+            
             cluster_summary = []
             for cluster in np.unique(cluster_labels):
                 cluster_data = data[data["cluster"] == cluster]
@@ -84,15 +84,14 @@ if pasted_data:
                 children_count = len(cluster_data) - 1
                 cluster_summary.append({
                     "Seed Keyword": seed_row[keyword_col],
-                    "Children Count": children_count,
-                    "Total Cluster Size": len(cluster_data)
+                    "Children Count": children_count
                 })
-
-            seed_df = pd.DataFrame(cluster_summary).sort_values(by="Total Cluster Size", ascending=False)
-
+            
+            seed_df = pd.DataFrame(cluster_summary).sort_values(by="Children Count", ascending=False)
+            
             st.write("### Cluster Summary (Seed Keywords)")
             st.dataframe(seed_df)
-
+            
             csv = seed_df.to_csv(index=False).encode("utf-8")
             st.download_button(
                 label="Download Cluster Summary CSV",
