@@ -15,7 +15,7 @@ This app clusters similar keywords based on their semantic similarity.
 - **Embedding:** The app computes vector embeddings for each keyword using a pre-trained language model (SentenceTransformer).
 - **Clustering:** Using Agglomerative Clustering with cosine distance, it groups semantically similar keywords.
 - **Seed Selection:** Within each cluster, the keyword with the highest search volume is chosen as the seed.
-- **Output:** The app displays a summary table showing the seed keywords along with the number of related (child) keywords, their volumes, and the sum of child volumes.
+- **Output:** The app displays a summary table showing the seed keywords along with the number of related (child) keywords, their volumes, and the sum of child volumes, as well as a comma-separated list of all keywords in the cluster.
 
 **Why It's Valuable:**
 - **Keyword Grouping:** Reduce redundancy by identifying core keywords.
@@ -87,11 +87,13 @@ if pasted_data:
                 total_cluster_volume = cluster_data[volume_col].sum()
                 child_volume = total_cluster_volume - seed_volume
                 children_count = len(cluster_data) - 1
+                grouped_keywords = ", ".join(cluster_data[keyword_col].tolist())
                 cluster_summary.append({
                     "Seed Keyword": seed_row[keyword_col],
                     "Seed Volume": seed_volume,
                     "Children Count": children_count,
-                    "Child Volume": child_volume
+                    "Child Volume": child_volume,
+                    "Grouped Keywords": grouped_keywords
                 })
             
             seed_df = pd.DataFrame(cluster_summary).sort_values(by="Children Count", ascending=False)
